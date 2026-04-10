@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>SVOR: Stable Video Object Removal under Imperfect Conditions</title>
+  <meta name="description" content="SVOR achieves stable, shadow-free, flicker-free video object removal under imperfect masks and abrupt motion via MUSE, DA-Seg, and curriculum two-stage training."/>
+  <meta name="keywords" content="SVOR, Video Object Removal, Video Inpainting, Shadow Removal, Diffusion Models, Temporal Stability"/>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Instrument+Sans:wght@400;500;600&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/css/bulma.min.css">
+  <link rel="stylesheet" href="./assets/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="./assets/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="./assets/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="./assets/css/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <!-- custom css file  -->
+  <link rel="stylesheet" href="./assets/css/style.css">
+  <link rel="stylesheet" href="./assets/css/twentytwenty.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  <style>
+    /* ════════════════════════════════════════════
+       BASE OVERRIDES
+    ════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans', 'Instrument Sans', sans-serif;
+      color: #1a2030;
+      background: #fff;
+    }
+
+    /* ════════════════════════════════════════════
+       BANNER / HERO  (our custom component)
+    ════════════════════════════════════════════ */
+    :root {
+      --ink:    #0f1520;
+      --mid:    #3a4a60;
+      --pale:   #8a9ab8;
+      --accent: #0a7cff;
+      --erase:  #00c896;
+      --warm:   #ff5c38;
+      --bg:     #f7f8fa;
+      --card:   #ffffff;
+      --border: #e0e5ee;
+    }
+
+    .svor-hero-wrap {
+      background: #eef0f5;
+      padding: 52px 24px 48px;
+    }
+
+    .banner {
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 40px rgba(15,21,32,0.10), 0 1px 4px rgba(15,21,32,0.06);
+    }
+
+    .stripe {
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--erase) 50%, var(--warm) 100%);
+    }
+
+    .b-content {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding: 48px 52px 44px;
+    }
+
+    .b-left { display: flex; flex-direction: column; justify-content: center; }
+
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 3.5px;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 18px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.1s;
+    }
+
+    .title-main {
+      font-family: 'DM Serif Display', serif;
+      font-size: 64px;
+      line-height: 1;
+      color: var(--ink);
+      letter-spacing: -1px;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.25s;
+    }
+
+    .title-main .s { position: relative; }
+    .title-main .s::after {
+      content: '';
+      position: absolute;
+      bottom: 6px; left: 0;
+      width: 100%; height: 3px;
+      background: var(--erase);
+      border-radius: 2px;
+      transform: scaleX(0);
+      transform-origin: left;
+      animation: underlineIn 0.5s ease forwards 1.1s;
+    }
+
+    .title-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--erase);
+      margin-bottom: 8px;
+      flex-shrink: 0;
+      opacity: 0;
+      animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards 1.0s;
+    }
+
+    .b-subtitle {
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 20.5px;
+      color: var(--mid);
+      line-height: 1.7;
+      max-width: 900px;
+      margin-top: 20px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.5s;
+    }
+    .b-subtitle strong { color: var(--ink); font-weight: 600; }
+
+    /* Authors */
+    .b-authors {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0;
+      margin-top: 16px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.42s;
+    }
+    .b-author {
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 13px;
+      color: var(--mid);
+      white-space: nowrap;
+    }
+    .b-author a {
+      color: var(--ink);
+      text-decoration: none;
+      font-weight: 600;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.15s;
+    }
+    .b-author a:hover { border-bottom-color: var(--accent); }
+    .b-author sup {
+      font-family: 'DM Mono', monospace;
+      font-size: 8px;
+      color: var(--accent);
+      margin-left: 1px;
+      vertical-align: super;
+    }
+    .author-sep { color: var(--border); margin: 0 6px; font-size: 12px; user-select: none; }
+    .equal-note {
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      color: var(--pale);
+      letter-spacing: 0.5px;
+      margin-left: 0;
+      margin-top: 6px;
+      width: 100%;
+    }
+
+    /* Tags */
+    .b-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.65s;
+    }
+    .b-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1px;
+      padding: 5px 11px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      color: var(--mid);
+      background: var(--bg);
+      white-space: nowrap;
+    }
+    .b-tag.accent { border-color: rgba(10,124,255,0.25); color: var(--accent); background: rgba(10,124,255,0.05); }
+    .b-tag.erase  { border-color: rgba(0,200,150,0.25);  color: #00a87a;       background: rgba(0,200,150,0.05); }
+
+    /* Links */
+    .b-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 28px;
+      opacity: 0;
+      animation: fadeUp 0.7s ease forwards 0.8s;
+    }
+    .b-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: 'Instrument Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .b-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+    .b-btn-primary { background: var(--ink); color: #fff !important; }
+    .b-btn-secondary { background: var(--bg); color: var(--ink) !important; border: 1px solid var(--border); }
+    .b-btn svg, .b-btn i { flex-shrink: 0; }
+
+    /* Right: visual panel */
+    .b-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-left: 48px;
+      opacity: 0;
+      animation: fadeIn 0.9s ease forwards 0.4s;
+    }
+    .vis-panel { position: relative; width: 280px; height: 200px; }
+
+    .vframe {
+      position: absolute;
+      width: 136px; height: 170px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1.5px solid var(--border);
+      background: #1a2540;
+      box-shadow: 0 8px 32px rgba(15,21,32,0.15);
+    }
+    .vframe:nth-child(1) { top:30px; left:0;  transform:rotate(-6deg); z-index:1; animation: floatA 5s   ease-in-out infinite; }
+    .vframe:nth-child(2) { top:18px; left:28px; transform:rotate(-1deg); z-index:2; animation: floatB 5.5s ease-in-out infinite 0.3s; }
+    .vframe:nth-child(3) { top:10px; left:56px; transform:rotate(5deg);  z-index:3; animation: floatC 4.8s ease-in-out infinite 0.6s; }
+
+    .scene { width:100%; height:100%; position:relative; }
+    .sky { position:absolute; top:0; left:0; right:0; height:60%; background:linear-gradient(180deg,#162040,#1d3060); }
+    .gnd { position:absolute; bottom:0; left:0; right:0; height:40%; background:#111d35; }
+    .hor { position:absolute; top:60%; left:0; right:0; height:1px; background:#2a4a80; opacity:.5; }
+
+    .sil { position:absolute; bottom:36%; left:50%; transform:translateX(-50%); display:flex; flex-direction:column; align-items:center; }
+    .sil-head { width:18px; height:18px; border-radius:50%; }
+    .sil-body { width:22px; height:32px; border-radius:4px 4px 2px 2px; margin-top:-1px; }
+    .sil-legs { display:flex; gap:3px; margin-top:-1px; }
+    .sil-leg  { width:8px; height:20px; border-radius:2px; }
+
+    .vframe:nth-child(1) .sil-head,
+    .vframe:nth-child(1) .sil-body,
+    .vframe:nth-child(1) .sil-leg { background:rgba(255,255,255,0.85); }
+
+    .mask-box {
+      position:absolute; bottom:28%; left:50%; transform:translateX(-50%);
+      width:36px; height:60px; border-radius:5px;
+      background:rgba(255,80,50,0.30); border:1.5px solid rgba(255,90,60,0.6);
+    }
+
+    .vframe:nth-child(2) .sil-head,
+    .vframe:nth-child(2) .sil-body,
+    .vframe:nth-child(2) .sil-leg { background:rgba(255,255,255,0.35); }
+
+    .scan-line {
+      position:absolute; top:0; bottom:0; width:2px;
+      background:linear-gradient(180deg,transparent,var(--erase),transparent);
+      left:54%;
+      animation:scanMove 2.8s ease-in-out infinite;
+      opacity:0.9; filter:blur(0.5px);
+    }
+
+    .particles { position:absolute; top:0; left:0; right:0; bottom:0; pointer-events:none; }
+    .p { position:absolute; border-radius:50%; background:var(--erase); animation:particleDrift linear infinite; }
+
+    .checkmark {
+      position:absolute; top:12px; right:12px;
+      width:22px; height:22px; border-radius:50%;
+      background:var(--erase);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .checkmark svg { width:12px; height:12px; }
+
+    /* Bottom bar */
+    .bottom-bar {
+      border-top:1px solid var(--border);
+      padding:14px 52px;
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--bg);
+      opacity:0;
+      animation:fadeIn 0.6s ease forwards 1.1s;
+    }
+    .b-affil {
+      font-family:'DM Mono',monospace;
+      font-size:9.5px; letter-spacing:2px;
+      color:var(--pale); text-transform:uppercase;
+    }
+    .metrics { display:flex; gap:32px; }
+    .metric  { display:flex; flex-direction:column; align-items:flex-end; }
+    .metric-val {
+      font-family:'DM Serif Display',serif;
+      font-size:18px; color:var(--ink); line-height:1;
+    }
+    .metric-val .unit { font-size:11px; color:var(--pale); font-family:'DM Mono',monospace; margin-left:2px; }
+    .metric-lbl { font-family:'DM Mono',monospace; font-size:8.5px; letter-spacing:1.5px; color:var(--pale); text-transform:uppercase; margin-top:2px; }
+    .metric-val.hi { color:var(--erase); }
+
+    /* Animations */
+    @keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+    @keyframes popIn   { from{opacity:0;transform:scale(0)} to{opacity:1;transform:scale(1)} }
+    @keyframes underlineIn { from{transform:scaleX(0)} to{transform:scaleX(1)} }
+    @keyframes floatA  { 0%,100%{transform:rotate(-6deg) translateY(0)} 50%{transform:rotate(-6deg) translateY(-6px)} }
+    @keyframes floatB  { 0%,100%{transform:rotate(-1deg) translateY(0)} 50%{transform:rotate(-1deg) translateY(-8px)} }
+    @keyframes floatC  { 0%,100%{transform:rotate(5deg)  translateY(0)} 50%{transform:rotate(5deg)  translateY(-5px)} }
+    @keyframes scanMove { 0%{left:30%;opacity:0} 20%{opacity:1} 80%{opacity:1} 100%{left:80%;opacity:0} }
+    @keyframes particleDrift { 0%{transform:translate(0,0) scale(1);opacity:0.9} 100%{transform:translate(var(--dx),var(--dy)) scale(0);opacity:0} }
+
+    @media(max-width:720px) {
+      .b-content { grid-template-columns:1fr; padding:32px 24px 28px; }
+      .b-right { padding-left:0; margin-top:32px; justify-content:flex-start; }
+      .title-main { font-size:48px; }
+      .bottom-bar { flex-direction:column; gap:16px; align-items:flex-start; padding:16px 24px; }
+    }
+
+    /* ════════════════════════════════════════════
+       BODY SECTIONS (Bulma-compatible)
+    ════════════════════════════════════════════ */
+    .section { padding: 3rem 1.5rem; }
+
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.75rem;
+      color: var(--ink);
+      border-left: 4px solid var(--erase);
+      padding-left: 14px;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-body {
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: #2e3a50;
+      /* max-width: 780px; */
+    }
+
+    /* Method component pills */
+    .method-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 1.25rem;
+    }
+    .pill {
+      display: flex;
+      flex-direction: column;
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      min-width: 180px;
+      flex: 1;
+    }
+    .pill-name {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .pill-desc {
+      font-size: 13px;
+      color: var(--mid);
+      line-height: 1.55;
+    }
+
+    /* Results placeholder grid */
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 1.25rem;
+    }
+    .result-card {
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--pale);
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* Results numbered blocks */
+    .result-blocks { margin-top: 1.25rem; }
+    .result-block {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      padding: 36px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-block:last-child { border-bottom: none; }
+    .result-num {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      line-height: 1;
+      color: var(--erase);
+      flex-shrink: 0;
+      width: 36px;
+      padding-top: 2px;
+    }
+    .result-body { flex: 1; }
+    .result-text {
+      font-family: 'Noto Sans', sans-serif;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: #2e3a50;
+    }
+    .result-text strong { color: var(--ink); }
+    .result-fig {
+      margin-top: 1.1rem;
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .result-fig img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .result-fig-cap {
+      font-family: 'DM Mono', monospace;
+      font-size: 10.5px;
+      letter-spacing: 0.5px;
+      color: var(--pale);
+      padding: 8px 14px 10px;
+      border-top: 1px solid var(--border);
+      background: var(--card);
+    }
+
+    /* BibTeX */
+    .bibtex-box {
+      background: #f0f2f5;
+      color: #2e3a50;
+      font-family: 'DM Mono', monospace;
+      font-size: 12.5px;
+      line-height: 1.75;
+      padding: 24px 28px;
+      border-radius: 12px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 1rem;
+      position: relative;
+    }
+    .bibtex-box .kw  { color: #0a7cff; }
+    .bibtex-box .val { color: #c06000; }
+    .copy-btn {
+      position: absolute;
+      top: 14px; right: 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #a8c8e8;
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: rgba(255,255,255,0.15); }
+
+    /* Footer */
+    .site-footer {
+      background: var(--bg);
+      border-top: 1px solid var(--border);
+      padding: 2rem 1.5rem;
+      text-align: center;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--pale);
+      letter-spacing: 0.5px;
+    }
+    .site-footer a { color: var(--pale); text-decoration: underline; }
+    /* ── SCROLL REVEAL ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.65s ease, transform 0.65s ease;
+    }
+    .reveal.revealed {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.10s; }
+    .reveal-delay-2 { transition-delay: 0.22s; }
+    .reveal-delay-3 { transition-delay: 0.34s; }
+    .reveal-delay-4 { transition-delay: 0.46s; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     BANNER / HERO
+══════════════════════════════════════════ -->
+<div class="svor-hero-wrap">
+  <div class="banner">
+    <div class="stripe"></div>
+
+    <div class="b-content">
+      <!-- LEFT -->
+      <div class="b-left">
+        <!-- <div class="eyebrow">ECCV 2025 &nbsp;·&nbsp; Video Inpainting</div> -->
+
+        <div class="title-main">
+          <span class="s">S</span><span class="v">V</span><span class="o">O</span><span class="r">R</span>
+          <div class="title-dot"></div>
+        </div>
+
+        <p class="b-subtitle">
+          From Ideal to Real: <strong>Stable Video Object Removal</strong> under Imperfect Conditions
+          <br/>
+          <span style="display:block; margin-top:8px; font-size: 14.5px;">
+            A shadow-free, flicker-free, and robust to defective masks method via
+            <strong>MUSE</strong>, <strong>DA-Seg</strong>, and curriculum two-stage training.
+          </span>
+        </p>
+
+        <div class="b-authors">
+          <span class="b-author"><a href="#">Jiagao Hu</a><sup>*</sup></span>
+          <span class="author-sep">·</span>
+          <span class="b-author"><a href="#">Yuxuan Chen</a><sup>*</sup></span>
+          <span class="author-sep">·</span>
+          <span class="b-author"><a href="#">Fuhao Li</a><sup>*</sup></span>
+          <span class="author-sep">·</span>
+          <span class="b-author"><a href="#">Zepeng Wang</a></span>
+          <span class="author-sep">·</span>
+          <span class="b-author"><a href="#">Fei Wang</a></span>
+          <span class="author-sep">·</span>
+          <span class="b-author"><a href="#">Daiguo Zhou</a></span>
+          <span class="author-sep">·</span>
+          <span class="b-author"><a href="#">Jian Luan</a></span>
+          <span class="equal-note">* equal contribution</span>
+        </div>
+
+        <div class="b-tags">
+          <span class="b-tag accent">Video Object Removal</span>
+          <span class="b-tag erase">Video Inpainting</span>
+          <span class="b-tag">Diffusion Models</span>
+          <span class="b-tag">Mask Robustness</span>
+          <span class="b-tag">Temporal Stability</span>
+        </div>
+
+        <div class="b-links">
+          <a class="b-btn b-btn-primary" href="https://arxiv.org/abs/2603.09283">
+            <i class="fas fa-file-pdf"></i> Paper
+          </a>
+          <a class="b-btn b-btn-secondary" href="https://github.com/xiaomi-research/svor/">
+            <i class="fab fa-github"></i> Code
+          </a>
+          <a class="b-btn b-btn-secondary" href="https://huggingface.co/HigherHu/SVOR">
+            <i class="fas fa-cube"></i> Model
+          </a>
+          <a class="b-btn b-btn-secondary" href="https://huggingface.co/datasets/HigherHu/RORD-50">
+            <i class="fas fa-database"></i> RORD-50
+          </a>
+        </div>
+      </div>
+
+      <!-- RIGHT: stacked video frames -->
+      <div class="b-right">
+        <div class="vis-panel">
+          <img src="./assets/images/svor_vis.svg"
+            alt="SVOR three imperfection scenarios"
+            style="width:260px; height:auto;"/>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="bottom-bar">
+      <div class="b-affil">MiLM Plus &nbsp;·&nbsp; Xiaomi Inc.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════
+     ABSTRACT
+══════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title reveal">Abstract</h2>
+    <p class="section-body reveal reveal-delay-1">
+      Removing objects from videos remains difficult in the presence of real-world imperfections
+      such as shadows, abrupt motion, and defective masks. Existing diffusion-based video
+      inpainting models often struggle to maintain temporal stability and visual consistency
+      under these challenges. We propose <strong>Stable Video Object Removal (SVOR)</strong>,
+      a robust framework that achieves shadow-free, flicker-free, and mask-defect-tolerant
+      removal through three key designs: <strong>MUSE</strong> (Mask Union for Stable Erasure),
+      a windowed union strategy applied during temporal mask downsampling;
+      <strong>DA-Seg</strong> (Denoising-Aware Segmentation), a lightweight decoupled
+      side-branch segmentation head; and <strong>Curriculum Two-Stage Training</strong>,
+      which first learns realistic background priors from unpaired data, then refines
+      side-effect suppression with paired supervision.
+      Extensive experiments show that SVOR attains new state-of-the-art results across
+      multiple datasets and degraded-mask benchmarks.
+    </p>
+    <p class="section-img reveal reveal-delay-2">
+      <img src="./assets/images/teaser.png" alt="SVOR key results"
+         style="margin-top:1.5rem; width:100%; height:auto; display:block;
+                border-radius:12px; border:1px solid var(--border);"/>
+    </p>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     METHOD
+══════════════════════════════════════════ -->
+<section class="section" style="background:var(--bg);">
+  <div class="container">
+    <h2 class="section-title reveal">Method</h2>
+    <p class="section-body reveal reveal-delay-1">
+      SVOR addresses three orthogonal failure modes of existing video object removal pipelines —
+      imperfect mask guidance, temporal misalignment under abrupt motion, and residual
+      side-effects — through three complementary components:
+    </p>
+
+    <div class="method-pills">
+      <div class="pill reveal reveal-delay-2">
+        <div class="pill-name">MUSE</div>
+        <div class="pill-desc">
+          Mask Union for Stable Erasure. Applies element-wise temporal OR within each
+          compression window to prevent location collapse under abrupt motion.
+          Plug-and-play; no retraining required.
+        </div>
+      </div>
+      <div class="pill reveal reveal-delay-3">
+        <div class="pill-name">DA-Seg</div>
+        <div class="pill-desc">
+          Denoising-Aware Segmentation head on a decoupled side branch. Uses DA-AdaLN
+          to condition localization on diffusion timestep, providing stable internal
+          priors under defective masks without affecting backbone generation.
+        </div>
+      </div>
+      <div class="pill reveal reveal-delay-4">
+        <div class="pill-name">Two-Stage Training</div>
+        <div class="pill-desc">
+          Stage I pretrains on ~49K unpaired background videos to learn realistic
+          completion priors. Stage II refines on synthetic pairs with mask degradation
+          and side-effect-weighted losses.
+        </div>
+      </div>
+    </div>
+
+    <!-- Framework figure placeholder -->
+    <p class="section-img reveal reveal-delay-2">
+      <img src="./assets/images/framework.png" alt="SVOR Framework"
+         style="margin-top:1.5rem; width:100%; height:auto; display:block;
+                border-radius:12px; border:1px solid var(--border);"/>
+    </p>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     RESULTS
+══════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title reveal">Results</h2>
+    <p class="section-body reveal reveal-delay-1">
+      SVOR achieves state-of-the-art performance on DAVIS, ROSE Bench, and the newly
+      introduced RORD-50 benchmark across all evaluation metrics including PSNR, SSIM,
+      ReMOVE, and GPT-4o perceptual score.
+    </p>
+
+    <!-- <div class="results-grid">
+      <div class="result-card">VIDEO RESULT 1</div>
+      <div class="result-card">VIDEO RESULT 2</div>
+      <div class="result-card">VIDEO RESULT 3</div>
+      <div class="result-card">VIDEO RESULT 4</div>
+      <div class="result-card">VIDEO RESULT 5</div>
+      <div class="result-card">VIDEO RESULT 6</div>
+    </div> -->
+
+    <div class="container reveal reveal-delay-2">
+      <div class="result-fig">
+        <div id="results-carousel" class="carousel results-carousel">
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/bmx-bumps.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/bmx-bumps.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/I-210715_I03012_W06.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/I-210715_I03012_W06.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/light_source-example-9.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/light_source-example-9.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/bus.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/bus.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/I-210907_O03015_W03.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/I-210907_O03015_W03.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/mirror-example-7.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/mirror-example-7.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/motocross-jump.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/motocross-jump.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/I-211003_I02010_W02.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/I-211003_I02010_W02.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Common</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/reflection-example-2.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/reflection-example-2.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Shadow</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/upside-down.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/upside-down.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Common</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input/varanus-cage.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result/varanus-cage.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="result-fig-cap">Perfect masks.</div>
+      </div>
+    </div>
+
+    <div class="container reveal reveal-delay-3">
+      <div class="result-fig">
+        <div id="results-carousel" class="carousel results-carousel">
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/boat.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/boat.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/camel.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/camel.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/dog-gooses.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/dog-gooses.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/drift-chicane.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/drift-chicane.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/elephant.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/elephant.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/hockey.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/hockey.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/kite-walk.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/kite-walk.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+
+          <div class="item">
+            <div class="twentytwenty-container" data-orientation="horizontal" ratio="0.5556">
+              <!-- <div class="desc">Reflection</div> -->
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/input_maskdrop0.5/stunt.mp4" type="video/mp4">
+                </video>
+              </div>
+              <div class="video">
+                <video muted autoplay="autoplay" loop="loop" width="100%">
+                  <source src="assets/videos/result_maskdrop0.5/stunt.mp4" type="video/mp4">
+                </video>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="result-fig-cap">Defective masks.</div>
+      </div>
+    </div>
+    <!-- <p class="section-body reveal reveal-delay-4">
+        <li> <b>Row 1</b>: Perfect masks. </li>
+        <li> <b>Row 2</b>: Defective masks. </li>
+    </p> -->
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     MUSE for Abrupt Motion Frames
+══════════════════════════════════════════ -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title reveal">MUSE for Abrupt Motion Frames</h2>
+      <div class="result-blocks reveal reveal-delay-1">
+        <div class="result-block reveal reveal-delay-2">
+          <div class="result-num">1</div>
+          <div class="result-body">
+            <p class="result-text">
+              <strong>MUSE in our method.</strong>
+              Under abrupt motion, standard temporal downsampling can discard target locations entirely,
+          causing missed removals and ghosting. MUSE replaces each compression window with
+          the union of all mask frames within it, ensuring no object location is lost.
+          Applying MUSE at inference already yields cleaner erasure;
+          training with MUSE further eliminates residual flicker.
+            </p>
+            <div class="result-fig">
+              <img src="./assets/images/MUSE_ours.png" alt="MUSE for our method"/>
+              <div class="result-fig-cap">MUSE for our method.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="result-block reveal reveal-delay-3">
+          <div class="result-num">2</div>
+          <div class="result-body">
+            <p class="result-text">
+              <strong>MUSE in existing methods.</strong>
+              MUSE can be applied as a training-free preprocessing step to any pipeline using temporal mask compression.
+          Simply replacing each mask group with its union consistently reduces artifacts under abrupt motion —
+          across <a href="https://gen-omnimatte.github.io/" target="_blank">gen-omni</a>,
+          <a href="https://minimax-remover.github.io/" target="_blank">minimax</a>, and
+          <a href="https://rose2025-inpaint.github.io/" target="_blank">ROSE</a>
+          — with no measurable degradation when motion is smooth.
+            </p>
+            <div class="result-fig">
+              <img src="./assets/images/MUSE_others.png" alt="MUSE for existing methods"/>
+              <div class="result-fig-cap">MUSE for existing methods.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     BIBTEX
+══════════════════════════════════════════ -->
+<section class="section" style="background:var(--bg);">
+  <div class="container">
+    <h2 class="section-title">BibTeX</h2>
+    <div class="bibtex-box">
+      <button class="copy-btn" onclick="copyBib()">Copy</button>
+<pre><span class="kw">@article</span>{hu2026svor,
+  <span class="kw">title</span>     = {<span class="val">From Ideal to Real: Stable Video Object Removal under Imperfect Conditions</span>},
+  <span class="kw">author</span>    = {<span class="val">Hu, Jiagao and Chen, Yuxuan and Li, Fuhao and Wang, Zepeng
+               and Wang, Fei and Zhou, Daiguo and Luan, Jian</span>},
+  <span class="kw">journal</span> = {<span class="val">arXiv preprint arXiv:2603.09283</span>},
+  <span class="kw">year</span>      = {<span class="val">2026</span>},
+}</pre>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════ -->
+<footer class="site-footer">
+  <p>
+    © 2026 MiLM Plus, Xiaomi Inc. &nbsp;·&nbsp;
+    Website template adapted from
+    <a href="https://github.com/ROSE2025-Inpaint/ROSE2025-Inpaint.github.io" target="_blank">ROSE</a>.
+    Feel free to clone this website's <a href="https://github.com/xiaomi-research/svor/docs/" target="_blank">source code</a>.
+            Thank you!
+  </p>
+</footer>
+
+
+<script>
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('revealed');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+function copyBib() {
+  const text = `@article{hu2026svor,
+  title     = {From Ideal to Real: Stable Video Object Removal under Imperfect Conditions},
+  author    = {Hu, Jiagao and Chen, Yuxuan and Li, Fuhao and Wang, Zepeng and Wang, Fei and Zhou, Daiguo and Luan, Jian},
+  journal = {arXiv preprint arXiv:2603.09283},
+  year      = {2026},
+}`;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
+</script>
+  <!-- custom js file  -->
+  <!-- <script defer src="./assets/js/fontawesome.all.min.js"></script> -->
+  <script src="./assets/js/bulma-carousel.min.js"></script>
+  <script src="./assets/js/bulma-slider.min.js"></script>
+  <script src="./assets/js/index.js"></script>
+  <script src="./assets/js/jquery.event.move.js"></script>
+  <script src="./assets/js/jquery.twentytwenty.js"></script>
+  <script>
+  $(function(){
+    $(".twentytwenty-container").twentytwenty();
+    // $(".twentytwenty-container", "#results-carousel").twentytwenty({default_offset_pct: 0.5, ratio: 0.5});
+    // $('.carousel').carousel();
+  });
+  </script>
+
+</body>
+</html>

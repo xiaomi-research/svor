@@ -1,0 +1,47 @@
+/* Shangchen */
+.logo img {
+    width: 100px;
+    border-radius: 50%;
+    box-shadow: 0 0 10px #f00;
+}
+
+.logo img:hover {
+    width: 210px;
+    border-radius: 50%;
+    box-shadow: 0 0 15px #f00;
+}
+
+.container.is-max-desktop.head {
+    max-width: 95%;
+}
+
+.button.is-rounded:hover {
+    transform: scale(1.02);
+    background-color: #fb5a42;
+}
+
+.banner {
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.05)), url(../images/rose_bg_7.png) no-repeat center center;
+    background-size: cover;
+    min-height: 30vh;
+    color: white;
+    text-shadow: 0 1px 3px rgba(5, 5, 5, 0.5);
+
+}
+
+.author-block a {
+    color: white;
+}
+
+/* Smaller than standard 960 (devices and browsers) */
+@media only screen and (max-width: 959px) {
+}
+
+/* Tablet Portrait size to standard 960 (devices and browsers) */
+@media only screen and (min-width: 768px) and (max-width: 959px) {
+}
+
+/* All Mobile Sizes (devices and browser) */
+@media only screen and (max-width: 767px) {
+
+}

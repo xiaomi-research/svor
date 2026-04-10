@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 200" width="280" height="200">
+  <defs>
+    <!-- Left: clean blue-white sky -->
+    <linearGradient id="skyL" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#deeaf8"/>
+      <stop offset="100%" style="stop-color:#c8ddf0"/>
+    </linearGradient>
+    <!-- Right: slightly muted, desaturated sky -->
+    <linearGradient id="skyR" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4d8e4"/>
+      <stop offset="100%" style="stop-color:#c4c8d8"/>
+    </linearGradient>
+    <!-- Ground left -->
+    <linearGradient id="gndL" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b8cede"/>
+      <stop offset="100%" style="stop-color:#a8becf"/>
+    </linearGradient>
+    <!-- Ground right -->
+    <linearGradient id="gndR" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b0b8c8"/>
+      <stop offset="100%" style="stop-color:#a0a8b8"/>
+    </linearGradient>
+    <!-- Shadow on ground -->
+    <linearGradient id="shadowG" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#7090b0;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#7090b0;stop-opacity:0"/>
+    </linearGradient>
+    <!-- Divider glow: use accent green -->
+    <linearGradient id="dividerG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   style="stop-color:#00c896;stop-opacity:0"/>
+      <stop offset="25%"  style="stop-color:#00c896;stop-opacity:0.8"/>
+      <stop offset="75%"  style="stop-color:#00c896;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#00c896;stop-opacity:0"/>
+    </linearGradient>
+    <filter id="blur3">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <filter id="softglow">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="leftClip">
+      <rect x="0" y="0" width="137" height="200"/>
+    </clipPath>
+    <clipPath id="rightClip">
+      <rect x="143" y="0" width="137" height="200"/>
+    </clipPath>
+    <clipPath id="frameClip">
+      <rect x="0" y="0" width="280" height="200" rx="12"/>
+    </clipPath>
+  </defs>
+
+  <!-- ── OUTER CARD ── -->
+  <rect width="280" height="200" rx="12" fill="#e8edf5"/>
+
+  <!-- ══════════════════════════════════
+       LEFT HALF — IDEAL
+  ══════════════════════════════════ -->
+  <rect x="0" y="0" width="137" height="200"
+        fill="url(#skyL)" clip-path="url(#leftClip)"/>
+  <!-- ground -->
+  <rect x="0" y="138" width="137" height="62"
+        fill="url(#gndL)" clip-path="url(#leftClip)"/>
+  <line x1="0" y1="138" x2="137" y2="138"
+        stroke="#9ab8d0" stroke-width="0.8"/>
+
+  <!-- person: clean, solid, ink-colored -->
+  <g clip-path="url(#leftClip)">
+    <circle cx="68" cy="72" r="13" fill="#2a4a6a"/>
+    <rect x="58" y="84"  width="20" height="36" rx="4"  fill="#2a4a6a"/>
+    <rect x="50" y="89"  width="10" height="7"  rx="3"  fill="#2a4a6a" opacity="0.85"/>
+    <rect x="78" y="89"  width="10" height="7"  rx="3"  fill="#2a4a6a" opacity="0.85"/>
+    <rect x="58" y="119" width="8"  height="20" rx="3"  fill="#2a4a6a"/>
+    <rect x="70" y="119" width="8"  height="20" rx="3"  fill="#2a4a6a"/>
+    <!-- clean shadow on ground -->
+    <ellipse cx="68" cy="139" rx="20" ry="4.5"
+             fill="url(#shadowG)" filter="url(#blur3)" opacity="0.8"/>
+  </g>
+
+  <!-- solid mask: accent red, sharp -->
+  <rect x="52" y="56" width="34" height="90" rx="4"
+        fill="rgba(255,92,56,0.18)"
+        stroke="rgba(255,92,56,0.75)" stroke-width="1.3"
+        clip-path="url(#leftClip)"/>
+
+  <!-- IDEAL label -->
+  <rect x="8" y="10" width="50" height="15" rx="4"
+        fill="rgba(255,255,255,0.72)"/>
+  <text x="33" y="21"
+        font-family="'Courier New',monospace" font-size="8"
+        fill="#0a7cff" text-anchor="middle" letter-spacing="1">IDEAL</text>
+
+  <!-- ══════════════════════════════════
+       DIVIDER
+  ══════════════════════════════════ -->
+  <rect x="136" y="0" width="8" height="200"
+        fill="#e0e5ee" clip-path="url(#frameClip)"/>
+  <line x1="140" y1="0" x2="140" y2="200"
+        stroke="url(#dividerG)" stroke-width="1.5"
+        filter="url(#softglow)"
+        clip-path="url(#frameClip)"/>
+
+  <!-- ══════════════════════════════════
+       RIGHT HALF — REAL (IMPERFECT)
+  ══════════════════════════════════ -->
+  <rect x="143" y="0" width="137" height="200"
+        fill="url(#skyR)" clip-path="url(#rightClip)"/>
+  <rect x="143" y="138" width="137" height="62"
+        fill="url(#gndR)" clip-path="url(#rightClip)"/>
+  <line x1="143" y1="138" x2="280" y2="138"
+        stroke="#8898b0" stroke-width="0.8"/>
+
+  <!-- person: motion blur ghosts, muted color -->
+  <g clip-path="url(#rightClip)">
+    <!-- ghost 1 -->
+    <circle cx="202" cy="74" r="13" fill="#6080a0" opacity="0.15"/>
+    <rect x="192" y="86" width="20" height="36" rx="4" fill="#6080a0" opacity="0.15"/>
+    <!-- ghost 2 -->
+    <circle cx="208" cy="72" r="13" fill="#6080a0" opacity="0.25"/>
+    <rect x="198" y="84" width="20" height="36" rx="4" fill="#6080a0" opacity="0.25"/>
+    <rect x="198" y="119" width="8"  height="20" rx="3" fill="#6080a0" opacity="0.22"/>
+    <rect x="210" y="119" width="8"  height="20" rx="3" fill="#6080a0" opacity="0.22"/>
+    <!-- main (most solid) -->
+    <circle cx="214" cy="70" r="13" fill="#3a5878" opacity="0.5"/>
+    <rect x="204" y="82" width="20" height="36" rx="4" fill="#3a5878" opacity="0.5"/>
+    <rect x="196" y="87" width="10" height="7"  rx="3" fill="#3a5878" opacity="0.38"/>
+    <rect x="224" y="87" width="10" height="7"  rx="3" fill="#3a5878" opacity="0.38"/>
+    <rect x="204" y="117" width="8"  height="20" rx="3" fill="#3a5878" opacity="0.45"/>
+    <rect x="216" y="117" width="8"  height="20" rx="3" fill="#3a5878" opacity="0.45"/>
+    <!-- shadow residue, offset & partial -->
+    <ellipse cx="220" cy="139" rx="24" ry="4"
+             fill="url(#shadowG)" filter="url(#blur3)" opacity="0.5"/>
+    <ellipse cx="204" cy="140" rx="12" ry="3"
+             fill="#7090b0" opacity="0.2" filter="url(#blur3)"/>
+  </g>
+
+  <!-- broken mask: dashed, misaligned, faded -->
+  <rect x="196" y="52" width="30" height="78" rx="4"
+        fill="rgba(255,92,56,0.07)"
+        stroke="rgba(255,92,56,0.45)" stroke-width="1.2"
+        stroke-dasharray="4,3"
+        clip-path="url(#rightClip)"/>
+  <!-- missing frame slots -->
+  <rect x="230" y="58" width="14" height="14" rx="2"
+        fill="rgba(255,92,56,0.05)"
+        stroke="rgba(255,92,56,0.28)" stroke-width="0.8"
+        stroke-dasharray="2,2"
+        clip-path="url(#rightClip)"/>
+  <line x1="231" y1="59" x2="243" y2="71"
+        stroke="rgba(255,92,56,0.35)" stroke-width="0.9"
+        clip-path="url(#rightClip)"/>
+  <line x1="243" y1="59" x2="231" y2="71"
+        stroke="rgba(255,92,56,0.35)" stroke-width="0.9"
+        clip-path="url(#rightClip)"/>
+  <rect x="230" y="76" width="14" height="14" rx="2"
+        fill="rgba(255,92,56,0.05)"
+        stroke="rgba(255,92,56,0.28)" stroke-width="0.8"
+        stroke-dasharray="2,2"
+        clip-path="url(#rightClip)"/>
+  <line x1="231" y1="77" x2="243" y2="89"
+        stroke="rgba(255,92,56,0.35)" stroke-width="0.9"
+        clip-path="url(#rightClip)"/>
+  <line x1="243" y1="77" x2="231" y2="89"
+        stroke="rgba(255,92,56,0.35)" stroke-width="0.9"
+        clip-path="url(#rightClip)"/>
+
+  <!-- REAL label -->
+  <rect x="222" y="10" width="50" height="15" rx="4"
+        fill="rgba(255,255,255,0.60)"/>
+  <text x="247" y="21"
+        font-family="'Courier New',monospace" font-size="8"
+        fill="#8a9ab8" text-anchor="middle" letter-spacing="1">REAL</text>
+
+  <!-- ── FILMSTRIP PERFORATIONS ── -->
+  <g fill="#c8d4e4" clip-path="url(#frameClip)">
+    <rect x="4"  y="4"   width="9" height="6" rx="1.5"/>
+    <rect x="17" y="4"   width="9" height="6" rx="1.5"/>
+    <rect x="30" y="4"   width="9" height="6" rx="1.5"/>
+    <rect x="43" y="4"   width="9" height="6" rx="1.5"/>
+    <rect x="4"  y="190" width="9" height="6" rx="1.5"/>
+    <rect x="17" y="190" width="9" height="6" rx="1.5"/>
+    <rect x="30" y="190" width="9" height="6" rx="1.5"/>
+    <rect x="43" y="190" width="9" height="6" rx="1.5"/>
+  </g>
+
+  <!-- ── OUTER BORDER ── -->
+  <rect width="280" height="200" rx="12"
+        fill="none" stroke="#c8d4e4" stroke-width="1.2"
+        clip-path="url(#frameClip)"/>
+
+</svg>
