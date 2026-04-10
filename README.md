@@ -28,7 +28,8 @@
 
 ## News
 
-* **`Apr. 10th, 2026`:** We released a [video removal skill](https://clawhub.ai/wangfei1204/mi-visionforge-svor) on ClawHub, built upon SVOR and [MiMo-V2-Omni](https://mimo.xiaomi.com/mimo-v2-omni), Use this SVOR_API_KEY: `sk-mipixgen-test`. It delivers even better practical performance when paired with [MiMo-V2-Pro](https://mimo.xiaomi.com/mimo-v2-pro). 🎉
+* **`Apr. 10th, 2026`:** The [Video Removal Skill](https://clawhub.ai/wangfei1204/mi-visionforge-svor) is now live on ClawHub! Powered by SVOR (an internally updated version) and [MiMo-V2-Omni](https://mimo.xiaomi.com/mimo-v2-omni), it removes objects from your videos using just a text prompt — **no mask required**. Pro tip: Pair it with [MiMo-V2-Pro](https://mimo.xiaomi.com/mimo-v2-pro) for the ultimate experience!🎉
+
 * **`Apr. 10th, 2026`:** Github repository and [project page](https://xiaomi-research.github.io/svor) is now available. 🎉
 * **`Mar. 10th, 2026`:** We released our paper on [Arxiv](https://arxiv.org/abs/2603.09283).
 
