@@ -1,0 +1,64 @@
+FROM nvcr.io/nvidia/cuda:12.6.0-cudnn-devel-ubuntu22.04
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_DISABLE_REQUIRE=1
+
+# ========== Stage 1: Clean and install system dependencies (including FFmpeg) ==========
+RUN rm -r /etc/apt/sources.list.d/ \
+    && apt-get update -y \
+    && apt-get install -y --no-install-recommends \
+        libgl1 libglib2.0-0 google-perftools \
+        sudo wget git git-lfs vim tig pkg-config libcairo2-dev \
+        aria2 telnet curl net-tools iputils-ping jq \
+        python3-pip python-is-python3 python3.10-venv python3-dev tzdata lsof zip tmux \
+        ffmpeg build-essential ninja-build\
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# ========== Stage 4: Upgrade Python package manager ==========
+RUN pip3 install --upgrade pip
+
+# ========== Stage 5: Install PyTorch core libraries ==========
+RUN pip install \
+        torch==2.7.0 torchvision==0.22.0 torchaudio==2.7.0 xformers==0.0.30 \
+        --index-url https://download.pytorch.org/whl/cu126
+
+
+# ========== Stage 5: Install flash-attn ==========
+RUN pip install packaging
+RUN pip install ninja psutil -i https://pypi.tuna.tsinghua.edu.cn/simple
+RUN pip install flash-attn==2.7.4.post1 --no-build-isolation
+
+# ========== Stage 6: Install core Python dependencies ==========
+RUN pip install xfuser==0.4.2 --progress-bar off
+RUN pip install wandb tqdm GitPython==3.1.32 Pillow==9.5.0 setuptools --progress-bar off
+RUN pip install bitsandbytes --progress-bar off
+RUN pip install yunchang==0.6.2 --progress-bar off
+RUN pip install lpips --progress-bar off
+RUN pip install protobuf==3.20.1 --progress-bar off
+RUN pip install flask flask-cors dataclasses-json --progress-bar off
+
+
+
+# ========== Stage 7: Install project additional dependencies ==========
+COPY ./requirements.txt /root/requirements.txt
+RUN pip install -r /root/requirements.txt \
+    && rm -rf /root/requirements.txt
+
+# ========== Stage 8: Install SAM2 runtime dependencies ==========
+RUN pip install \
+        numpy>=1.24.4 tqdm>=4.66.1 hydra-core>=1.3.2 iopath>=0.1.10 pillow>=9.4.0 \
+
+
+# ========== Stage 9: Clone and install SAM2 library ==========
+WORKDIR /root/
+RUN git clone https://github.com/facebookresearch/sam2.git
+WORKDIR /root/sam2
+RUN pip install -e .
+
+# ========== Clean cache ==========
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && pip cache purge
+
+# ========== Stage 10: Set working directory ==========
+WORKDIR /root/
