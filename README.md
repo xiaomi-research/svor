@@ -19,6 +19,8 @@
 
 ## News
 
+* **`May. 15th, 2026`:** 🔥 Check out our video removal evaluation benchmark [**PROVE**](https://xiaomi-research.github.io/prove/) — a comprehensive benchmark for evaluating video object removal quality!
+
 * **`Apr. 21th, 2026`:** [Inference code](#quick-test) and [pretrained loras](#pretrained-weights) are now available. 🎉
 
 * **`Apr. 16th, 2026`:** 🏆 SVOR-based solution has won 1st place at the [Physics-aware Video Instance Removal Challenge](https://xiangbogaobarry.github.io/PVIX-CVPR-VGBE-2026/), CVPR 2026. 🎉
