@@ -260,6 +260,11 @@ Some key options:
     ```
 
 
+## ComfyUI Support
+
+Thanks to [@Foxerity](https://github.com/Foxerity), SVOR is now available as a ComfyUI node: [ComfyUI-SVOR](https://github.com/Foxerity/ComfyUI-SVOR)
+
+
 ## RORD-50 Dataset
 
 The RORD-50 Dataset can be downloaded from [HigherHu/RORD-50](https://huggingface.co/datasets/HigherHu/RORD-50)
